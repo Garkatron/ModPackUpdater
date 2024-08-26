@@ -37,3 +37,7 @@ https://github.com/Turnip-Labs/bta-halplibe/releases/download/4.1.3/halplibe-4.1
 - Create a repository named `Modpacks` in your GitHub account.
 - Inside this repository, create a folder with the name of your modpack.
 - Upload a new release with the following format: `modpackname=version`, where the version should only consist of numbers.
+
+# Disclaimer:
+
+Please exercise caution and thoroughly verify the links for any files you download using this program. I am not responsible for any issues or damages that may arise from the use of this software. Download and use at your own risk.
