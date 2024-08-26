@@ -6,24 +6,29 @@ import java.awt.BorderLayout
 import java.io.IOException
 import javax.swing.*
 
-import javax.swing.SwingWorker
+/**
+ * A utility object for handling configuration and downloading tasks related to modpacks and application settings.
+ */
 object DataInputPopup {
 
+    /**
+     * Initializes the modpack configuration dialog.
+     * Allows the user to specify the number of mods and their corresponding URLs.
+     */
     @JvmStatic
     fun initModpackConfig() {
-        // Configurar un JFrame para el formulario
-        val frame = JFrame("Configuración del Modpack")
+        // Configure a JFrame for the form
+        val frame = JFrame("Modpack Configuration")
         frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         frame.setSize(400, 300)
         frame.layout = BoxLayout(frame.contentPane, BoxLayout.Y_AXIS)
 
-        // Crear los campos de entrada y etiquetas
+        // Create input fields and labels
         val countField = JTextField(20)
+        frame.add(createLabeledPanel("Number of mods:", countField))
 
-        frame.add(createLabeledPanel("Cantidad de mods:", countField))
-
-        // Botón para mostrar los campos de mod
-        val showModsButton = JButton("Mostrar Campos de Mods")
+        // Button to show mod fields
+        val showModsButton = JButton("Show Mod Fields")
         showModsButton.addActionListener {
             val countStr = countField.text.trim()
             val count = countStr.toIntOrNull()
@@ -31,7 +36,7 @@ object DataInputPopup {
             if (count == null || count <= 0) {
                 JOptionPane.showMessageDialog(
                     frame,
-                    "La cantidad de mods debe ser un número positivo.",
+                    "The number of mods must be a positive integer.",
                     "Error",
                     JOptionPane.ERROR_MESSAGE
                 )
@@ -43,11 +48,11 @@ object DataInputPopup {
             val modUrlsSet = mutableSetOf<String>()
 
             for (i in 1..count) {
-                val modUrl = JOptionPane.showInputDialog(frame, "Introduce la URL del mod #$i:")?.trim()
+                val modUrl = JOptionPane.showInputDialog(frame, "Enter the URL of mod #$i:")?.trim()
                 if (modUrl.isNullOrEmpty()) {
                     JOptionPane.showMessageDialog(
                         frame,
-                        "La URL del mod no puede estar vacía.",
+                        "The mod URL cannot be empty.",
                         "Error",
                         JOptionPane.ERROR_MESSAGE
                     )
@@ -59,7 +64,7 @@ object DataInputPopup {
                 if (modNamesSet.contains(modName)) {
                     JOptionPane.showMessageDialog(
                         frame,
-                        "El nombre del mod '$modName' ya ha sido introducido.",
+                        "The mod name '$modName' has already been entered.",
                         "Error",
                         JOptionPane.ERROR_MESSAGE
                     )
@@ -69,7 +74,7 @@ object DataInputPopup {
                 if (modUrlsSet.contains(modUrl)) {
                     JOptionPane.showMessageDialog(
                         frame,
-                        "La URL del mod '$modUrl' ya ha sido introducida.",
+                        "The mod URL '$modUrl' has already been entered.",
                         "Error",
                         JOptionPane.ERROR_MESSAGE
                     )
@@ -81,47 +86,51 @@ object DataInputPopup {
                 mods.add(modName to modUrl)
             }
 
-            // Construir la cadena de configuración para el modpack
+            // Build the modpack configuration string
             val modpackConfigString = StringBuilder()
             mods.forEach { (modName, modUrl) ->
                 modpackConfigString.append("$modName=$modUrl\n")
             }
 
-            // Guardar el archivo de configuración del modpack
-            val modpackConfigPath = "C:/Users/masit/Videos/AAAA/modpack.conf"
+            // Save the modpack configuration file
+            val modpackConfigPath = "./modpack.conf"
             ConfigHandler.makeConfig(modpackConfigPath, modpackConfigString.toString())
 
             JOptionPane.showMessageDialog(
                 frame,
-                "Configuración del modpack completa.\n\n$modpackConfigString",
-                "Configuración",
+                "Modpack configuration complete.\n\n$modpackConfigString",
+                "Configuration",
                 JOptionPane.INFORMATION_MESSAGE
             )
-            frame.dispose() // Cerrar el formulario después de completar
+            frame.dispose() // Close the form after completion
         }
         frame.add(showModsButton)
 
-        // Mostrar el formulario
+        // Show the form
         frame.isVisible = true
     }
 
+    /**
+     * Initializes the application configuration dialog.
+     * Allows the user to specify the URL of the modpack configuration file and the path for saving .jar files.
+     */
     @JvmStatic
     fun initAppConfig() {
-        // Configurar un JFrame para el formulario
-        val frame = JFrame("Configuración de la Aplicación")
+        // Configure a JFrame for the form
+        val frame = JFrame("Application Configuration")
         frame.defaultCloseOperation = JFrame.EXIT_ON_CLOSE
         frame.setSize(400, 300)
         frame.layout = BoxLayout(frame.contentPane, BoxLayout.Y_AXIS)
 
-        // Crear los campos de entrada y etiquetas
+        // Create input fields and labels
         val modpackUrlField = JTextField(20)
         val jarDownloadPathField = JTextField(20)
 
-        frame.add(createLabeledPanel("URL del archivo de configuración del modpack:", modpackUrlField))
-        frame.add(createLabeledPanel("Ruta para guardar los archivos .jar:", jarDownloadPathField))
+        frame.add(createLabeledPanel("URL of the modpack configuration file:", modpackUrlField))
+        frame.add(createLabeledPanel("Path to save .jar files:", jarDownloadPathField))
 
-        // Botón para guardar la configuración de la aplicación
-        val saveConfigButton = JButton("Guardar Configuración")
+        // Button to save application configuration
+        val saveConfigButton = JButton("Save Configuration")
         saveConfigButton.addActionListener {
             val modpackUrl = modpackUrlField.text.trim()
             val jarDownloadPath = jarDownloadPathField.text.trim()
@@ -129,32 +138,38 @@ object DataInputPopup {
             if (modpackUrl.isEmpty() || jarDownloadPath.isEmpty()) {
                 JOptionPane.showMessageDialog(
                     frame,
-                    "Todos los campos deben ser completados.",
+                    "All fields must be completed.",
                     "Error",
                     JOptionPane.ERROR_MESSAGE
                 )
                 return@addActionListener
             }
 
-            // Guardar la configuración de la aplicación
+            // Save the application configuration
             val appConfigString = "modpackConfigUrl=$modpackUrl\njarDownloadPath=$jarDownloadPath"
-            val appConfigPath = "C:/Users/masit/Videos/AAAA/app.conf"
+            val appConfigPath = "./app.conf"
             ConfigHandler.makeConfig(appConfigPath, appConfigString)
 
             JOptionPane.showMessageDialog(
                 frame,
-                "Configuración de la aplicación completa.\n\n$appConfigString",
-                "Configuración",
+                "Application configuration complete.\n\n$appConfigString",
+                "Configuration",
                 JOptionPane.INFORMATION_MESSAGE
             )
-            frame.dispose() // Cerrar el formulario después de completar
+            frame.dispose() // Close the form after completion
         }
         frame.add(saveConfigButton)
 
-        // Mostrar el formulario
+        // Show the form
         frame.isVisible = true
     }
 
+    /**
+     * Creates a JPanel with a label and a text field.
+     * @param label The label text
+     * @param textField The text field
+     * @return A JPanel containing the label and text field
+     */
     private fun createLabeledPanel(label: String, textField: JTextField): JPanel {
         val panel = JPanel()
         panel.add(JLabel(label))
@@ -162,8 +177,13 @@ object DataInputPopup {
         return panel
     }
 
+    /**
+     * Extracts the mod name from a given mod URL.
+     * @param modUrl The URL of the mod
+     * @return The extracted mod name, or "unknown" if the URL is not valid
+     */
     private fun extractModName(modUrl: String): String {
-        // Extraer el nombre del repositorio sin el prefijo del usuario
+        // Extract the repository name without the user prefix
         val regex = Regex("""https://github\.com/[^/]+/([^/]+)""")
         val matchResult = regex.find(modUrl)
         return matchResult?.let {
@@ -173,29 +193,33 @@ object DataInputPopup {
 
     private lateinit var progressDialog: JDialog
 
+    /**
+     * Initializes the application by reading configuration files, downloading the modpack configuration,
+     * and downloading the mod .jar files.
+     */
     @JvmStatic
     fun init() {
-        val appConfigPath = "C:/Users/masit/Videos/AAAA/app.conf"
+        val appConfigPath = "./app.conf"
         val appConfigLines = ConfigHandler.getConfig(appConfigPath)
 
         if (appConfigLines.isEmpty()) {
-            println("El archivo de configuración de la aplicación está vacío.")
+            println("The application configuration file is empty.")
             return
         }
 
         val modpackConfigUrl = appConfigLines.find { it.startsWith("modpackConfigUrl=") }?.split("=")?.get(1) ?: run {
-            println("No se encontró la URL de configuración del modpack en la configuración de la aplicación.")
+            println("Modpack configuration URL not found in application configuration.")
             return
         }
 
         val jarDownloadPath = appConfigLines.find { it.startsWith("jarDownloadPath=") }?.split("=")?.get(1) ?: run {
-            println("No se encontró la ruta de descarga de los archivos .jar en la configuración de la aplicación.")
+            println("Jar download path not found in application configuration.")
             return
         }
 
-        val modpackConfigPath = "C:/Users/masit/Videos/AAAA/modpack.conf"
+        val modpackConfigPath = "./modpack.conf"
 
-        // Crear y mostrar el diálogo de progreso
+        // Create and show the progress dialog
         showProgressDialog()
 
         try {
@@ -216,47 +240,56 @@ object DataInputPopup {
                 val outputPath = "${jarDownloadPath}/${modName}.jar"
 
                 try {
-                    println("Descargando archivo desde: $fileUrl a $outputPath")
+                    println("Downloading file from: $fileUrl to $outputPath")
                     Downloader.downloadFile(fileUrl, outputPath)
                 } catch (e: IOException) {
                     e.printStackTrace()
                 }
             } else {
-                println("Línea de configuración inválida: $line")
+                println("Invalid configuration line: $line")
             }
         }
 
-        // Cerrar el diálogo de progreso cuando la descarga esté completa
+        // Close the progress dialog when downloads are complete
         closeProgressDialog()
 
-        // Mostrar mensaje final
+        // Show final message
         SwingUtilities.invokeLater {
             JOptionPane.showMessageDialog(
                 null,
-                "Descarga de mods completada.",
-                "Completado",
+                "Mod download completed.",
+                "Completed",
                 JOptionPane.INFORMATION_MESSAGE
             )
         }
     }
 
+    /**
+     * Displays a progress dialog indicating that mods are being downloaded.
+     */
     private fun showProgressDialog() {
         SwingUtilities.invokeLater {
             val frame = JFrame()
             frame.defaultCloseOperation = JFrame.DISPOSE_ON_CLOSE
             frame.isUndecorated = true
-            frame.setSize(0, 0) // Ocultar el JFrame
+            frame.setSize(0, 0) // Hide the JFrame
             frame.isVisible = false
 
-            progressDialog = JDialog(frame, "Progreso", true)
+            progressDialog = JDialog(frame, "Progress", true)
             progressDialog.setSize(300, 100)
             progressDialog.layout = BorderLayout()
-            progressDialog.add(JLabel("Se están descargando los mods. Por favor, espere...", SwingConstants.CENTER), BorderLayout.CENTER)
+            progressDialog.add(
+                JLabel("Downloading mods. Please wait...", SwingConstants.CENTER),
+                BorderLayout.CENTER
+            )
             progressDialog.setLocationRelativeTo(null)
             progressDialog.isVisible = true
         }
     }
 
+    /**
+     * Closes the progress dialog if it is currently displayed.
+     */
     private fun closeProgressDialog() {
         SwingUtilities.invokeLater {
             if (::progressDialog.isInitialized && progressDialog.isVisible) {
@@ -265,5 +298,3 @@ object DataInputPopup {
         }
     }
 }
-
-

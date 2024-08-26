@@ -1,9 +1,14 @@
 plugins {
     kotlin("jvm") version "1.9.10" // Versión estable y bien soportada de Kotlin
+    application
 }
 
 group = "deus.mpu"
-version = "1.0-SNAPSHOT"
+version = project.version
+
+application {
+    mainClass.set("deus.MainKt") // Replace with your package and main class name
+}
 
 repositories {
     mavenCentral()
