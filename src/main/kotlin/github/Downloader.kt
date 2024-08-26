@@ -7,7 +7,8 @@ import okio.buffer
 import okio.sink
 import java.io.File
 import java.io.IOException
-
+import org.json.JSONArray
+import org.json.JSONObject
 /**
  * A utility object for downloading files from GitHub releases or any other URL.
  */
@@ -66,5 +67,56 @@ object Downloader {
         }
 
         println("Downloaded file from $fileUrl to $outputPath")
+    }
+    /**
+     * Checks for releases in a GitHub repository and returns the latest release tag name.
+     *
+     * @param owner The owner of the GitHub repository.
+     * @param repo The name of the GitHub repository.
+     * @return The tag name of the latest release, or null if no releases are found or an error occurs.
+     */
+    @JvmStatic
+    fun getLatestReleaseTag(owner: String, repo: String): String? {
+        val url = "https://api.github.com/repos/$owner/$repo/releases"
+        val client = OkHttpClient()
+
+        val request = Request.Builder().url(url).build()
+
+        return try {
+            val response: Response = client.newCall(request).execute()
+
+            if (!response.isSuccessful) throw IOException("Failed to get releases: ${response.message}")
+
+            val body = response.body?.string() ?: return null
+            val jsonArray = JSONArray(body)
+
+            if (jsonArray.length() > 0) {
+                val latestRelease = jsonArray.getJSONObject(0)
+                latestRelease.getString("tag_name")
+            } else {
+                null
+            }
+        } catch (e: Exception) {
+            e.printStackTrace()
+            null
+        }
+    }
+
+    /**
+     * Checks for a specific asset in the latest GitHub release and downloads it.
+     *
+     * @param owner The owner of the GitHub repository.
+     * @param repo The name of the GitHub repository.
+     * @param assetName The name of the asset to download.
+     * @param outputPath The file path where the downloaded asset will be saved.
+     * @throws IOException If an error occurs during the download or saving of the file.
+     */
+    @JvmStatic
+    fun downloadLatestReleaseAsset(owner: String, repo: String, assetName: String, outputPath: String) {
+        val latestTag = getLatestReleaseTag(owner, repo) ?: throw IOException("No releases found or failed to get releases")
+
+        // Build URL for the asset in the latest release
+        val assetUrl = "https://github.com/$owner/$repo/releases/download/$latestTag/$assetName"
+        downloadFile(assetUrl, outputPath)
     }
 }

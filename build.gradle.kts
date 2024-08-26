@@ -1,34 +1,44 @@
 plugins {
-    kotlin("jvm") version "1.9.10" // Versión estable y bien soportada de Kotlin
+    kotlin("jvm") version "1.9.10"
     application
-}
-
-group = "deus.mpu"
-version = project.version
-
-application {
-    mainClass.set("deus.MainKt") // Replace with your package and main class name
+    id("com.github.johnrengelman.shadow") version "8.1.0"
 }
 
 repositories {
-    mavenCentral()
+    mavenCentral() // Ensure dependencies are resolved from Maven Central
+}
+
+application {
+    mainClass.set("deus.MainKt")
 }
 
 dependencies {
-    testImplementation(kotlin("test"))
-    implementation("com.squareup.okhttp3:okhttp:4.9.3") // Versión estable de OkHttp
-    implementation("com.squareup.okio:okio:3.2.0")     // Versión que es compatible con Kotlin 1.9.x
-}
+    implementation(kotlin("stdlib"))
+    implementation("com.squareup.okhttp3:okhttp:4.9.3")
+    implementation("com.squareup.okio:okio:3.4.0")
+    implementation("org.json:json:20231013")
 
+}
+// Configuración de la versión de Java
 java {
-    sourceCompatibility = JavaVersion.VERSION_17  // Utiliza la versión LTS de Java para mayor compatibilidad
-    targetCompatibility = JavaVersion.VERSION_17
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(8))
+    }
 }
 
-tasks.test {
-    useJUnitPlatform()
+tasks.withType<JavaCompile> {
+    options.encoding = "UTF-8"
+    sourceCompatibility = "8"
+    targetCompatibility = "8"
 }
 
-kotlin {
-    jvmToolchain(17) // Configura el JDK 17 para mayor compatibilidad
+tasks.shadowJar {
+    archiveClassifier.set("") // Remove the default '-all' suffix
+    manifest {
+        attributes["Main-Class"] = "deus.MainKt"
+    }
+}
+
+tasks.build {
+    dependsOn(tasks.shadowJar)
 }

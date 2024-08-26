@@ -5,6 +5,7 @@ import deus.github.Downloader
 import java.awt.BorderLayout
 import java.io.IOException
 import javax.swing.*
+import kotlin.system.exitProcess
 
 /**
  * A utility object for handling configuration and downloading tasks related to modpacks and application settings.
@@ -87,14 +88,11 @@ object DataInputPopup {
             }
 
             // Build the modpack configuration string
-            val modpackConfigString = StringBuilder()
-            mods.forEach { (modName, modUrl) ->
-                modpackConfigString.append("$modName=$modUrl\n")
-            }
+            val modpackConfigString = mods.joinToString("\n") { (modName, modUrl) -> "$modName=$modUrl" }
 
             // Save the modpack configuration file
             val modpackConfigPath = "./modpack.conf"
-            ConfigHandler.makeConfig(modpackConfigPath, modpackConfigString.toString())
+            ConfigHandler.makeConfig(modpackConfigPath, modpackConfigString)
 
             JOptionPane.showMessageDialog(
                 frame,
@@ -123,19 +121,22 @@ object DataInputPopup {
         frame.layout = BoxLayout(frame.contentPane, BoxLayout.Y_AXIS)
 
         // Create input fields and labels
-        val modpackUrlField = JTextField(20)
+        val JrepoOwner = JTextField(20)
+        val JrepoName = JTextField(20)
         val jarDownloadPathField = JTextField(20)
 
-        frame.add(createLabeledPanel("URL of the modpack configuration file:", modpackUrlField))
+        frame.add(createLabeledPanel("Repo owner:", JrepoOwner))
+        frame.add(createLabeledPanel("Repo name:", JrepoName))
         frame.add(createLabeledPanel("Path to save .jar files:", jarDownloadPathField))
 
         // Button to save application configuration
         val saveConfigButton = JButton("Save Configuration")
         saveConfigButton.addActionListener {
-            val modpackUrl = modpackUrlField.text.trim()
+            val repoOwner = JrepoOwner.text.trim()
+            val repoName = JrepoName.text.trim()
             val jarDownloadPath = jarDownloadPathField.text.trim()
 
-            if (modpackUrl.isEmpty() || jarDownloadPath.isEmpty()) {
+            if (repoOwner.isEmpty() ||repoName.isEmpty() || jarDownloadPath.isEmpty()) {
                 JOptionPane.showMessageDialog(
                     frame,
                     "All fields must be completed.",
@@ -146,7 +147,9 @@ object DataInputPopup {
             }
 
             // Save the application configuration
-            val appConfigString = "modpackConfigUrl=$modpackUrl\njarDownloadPath=$jarDownloadPath"
+            val appConfigString = "" +
+                    "owner=$repoOwner\n" + "repo=$repoName" +
+                    "\njarDownloadPath=$jarDownloadPath"
             val appConfigPath = "./app.conf"
             ConfigHandler.makeConfig(appConfigPath, appConfigString)
 
@@ -186,9 +189,7 @@ object DataInputPopup {
         // Extract the repository name without the user prefix
         val regex = Regex("""https://github\.com/[^/]+/([^/]+)""")
         val matchResult = regex.find(modUrl)
-        return matchResult?.let {
-            it.groupValues[1]
-        } ?: "unknown"
+        return matchResult?.groupValues?.get(1) ?: "unknown"
     }
 
     private lateinit var progressDialog: JDialog
@@ -207,8 +208,13 @@ object DataInputPopup {
             return
         }
 
-        val modpackConfigUrl = appConfigLines.find { it.startsWith("modpackConfigUrl=") }?.split("=")?.get(1) ?: run {
-            println("Modpack configuration URL not found in application configuration.")
+        val ownerName = appConfigLines.find { it.startsWith("owner=") }?.split("=")?.get(1) ?: run {
+            println("Repo owner configuration not found in application configuration.")
+            return
+        }
+
+        val repoName = appConfigLines.find { it.startsWith("repo=") }?.split("=")?.get(1) ?: run {
+            println("Repo name configuration not found in application configuration.")
             return
         }
 
@@ -223,7 +229,7 @@ object DataInputPopup {
         showProgressDialog()
 
         try {
-            Downloader.downloadFile(modpackConfigUrl, modpackConfigPath)
+            Downloader.downloadLatestReleaseAsset(ownerName, repoName, "modpack.conf", modpackConfigPath)
         } catch (e: IOException) {
             e.printStackTrace()
             closeProgressDialog()
@@ -296,5 +302,6 @@ object DataInputPopup {
                 progressDialog.dispose()
             }
         }
+        exitProcess(0)
     }
 }
