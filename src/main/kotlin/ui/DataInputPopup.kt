@@ -2,6 +2,7 @@ package deus.ui
 
 import deus.config.ConfigHandler
 import deus.github.Downloader
+import deus.github.Downloader.getLatestReleaseTag
 import java.awt.BorderLayout
 import java.io.IOException
 import javax.swing.*
@@ -123,10 +124,12 @@ object DataInputPopup {
         // Create input fields and labels
         val JrepoOwner = JTextField(20)
         val JrepoName = JTextField(20)
+        val JreleasePrefix = JTextField(20)
         val jarDownloadPathField = JTextField(20)
 
         frame.add(createLabeledPanel("Repo owner:", JrepoOwner))
         frame.add(createLabeledPanel("Repo name:", JrepoName))
+        frame.add(createLabeledPanel("Release prefix:", JreleasePrefix))
         frame.add(createLabeledPanel("Path to save .jar files:", jarDownloadPathField))
 
         // Button to save application configuration
@@ -134,9 +137,10 @@ object DataInputPopup {
         saveConfigButton.addActionListener {
             val repoOwner = JrepoOwner.text.trim()
             val repoName = JrepoName.text.trim()
+            val releasePrefix = JreleasePrefix.text.trim();
             val jarDownloadPath = jarDownloadPathField.text.trim()
 
-            if (repoOwner.isEmpty() ||repoName.isEmpty() || jarDownloadPath.isEmpty()) {
+            if (repoOwner.isEmpty() || releasePrefix.isEmpty()||repoName.isEmpty() || jarDownloadPath.isEmpty()) {
                 JOptionPane.showMessageDialog(
                     frame,
                     "All fields must be completed.",
@@ -148,7 +152,7 @@ object DataInputPopup {
 
             // Save the application configuration
             val appConfigString = "" +
-                    "owner=$repoOwner\n" + "repo=$repoName" +
+                    "owner=$repoOwner\n" + "repoPrefix=$releasePrefix\n" + "repo=$repoName" +
                     "\njarDownloadPath=$jarDownloadPath"
             val appConfigPath = "./app.conf"
             ConfigHandler.makeConfig(appConfigPath, appConfigString)
@@ -208,6 +212,11 @@ object DataInputPopup {
             return
         }
 
+        val repoPrefix = appConfigLines.find { it.startsWith("repoPrefix=") }?.split("=")?.get(1) ?: run {
+            println("Repo prefix configuration not found in application configuration.")
+            return
+        }
+
         val ownerName = appConfigLines.find { it.startsWith("owner=") }?.split("=")?.get(1) ?: run {
             println("Repo owner configuration not found in application configuration.")
             return
@@ -229,7 +238,11 @@ object DataInputPopup {
         showProgressDialog()
 
         try {
-            Downloader.downloadLatestReleaseAsset(ownerName, repoName, "modpack.conf", modpackConfigPath)
+            val tag = getLatestReleaseTag(ownerName, repoName, repoPrefix) ?: throw IOException("No releases found or failed to get releases")
+
+            Downloader.downloadReleaseAsset(ownerName, repoName, tag, "modpack.conf", modpackConfigPath)
+
+                //.downloadLatestReleaseAsset(ownerName, repoName, "modpack.conf", modpackConfigPath)
         } catch (e: IOException) {
             e.printStackTrace()
             closeProgressDialog()

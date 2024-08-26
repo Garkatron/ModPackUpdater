@@ -119,4 +119,49 @@ object Downloader {
         val assetUrl = "https://github.com/$owner/$repo/releases/download/$latestTag/$assetName"
         downloadFile(assetUrl, outputPath)
     }
+
+    @JvmStatic
+    fun downloadReleaseAsset(owner: String, repo: String, latestTag: String, assetName: String, outputPath: String) {
+
+        // Build URL for the asset in the latest release
+        val assetUrl = "https://github.com/$owner/$repo/releases/download/$latestTag/$assetName"
+        downloadFile(assetUrl, outputPath)
+    }
+
+    /**
+     * Obtains the tag of the latest release that matches the specified prefix.
+     *
+     * @param owner The GitHub repository owner's name.
+     * @param repo The repository name.
+     * @param prefix The prefix to match in the release tag.
+     * @return The tag of the latest matching release, or null if no matching release is found.
+     * @throws IOException If there is an error during the request.
+     */
+    fun getLatestReleaseTag(owner: String, repo: String, prefix: String): String? {
+        val client = OkHttpClient()
+        val request = Request.Builder()
+            .url("https://api.github.com/repos/$owner/$repo/releases")
+            .build()
+
+        val response = client.newCall(request).execute()
+        if (!response.isSuccessful) throw IOException("Failed to get releases: ${response.message}")
+
+        val releases = JSONArray(response.body?.string())
+
+        val filteredReleases = mutableListOf<Pair<String, String>>()
+
+        for (i in 0 until releases.length()) {
+            val release = releases.getJSONObject(i)
+            val tagName = release.getString("tag_name")
+
+            if (tagName.startsWith(prefix)) {
+                val createdAt = release.getString("created_at")
+                filteredReleases.add(Pair(tagName, createdAt))
+            }
+        }
+
+        // Sort by creation date (descending) and return the latest tag
+        filteredReleases.sortByDescending { it.second }
+        return filteredReleases.firstOrNull()?.first
+    }
 }
